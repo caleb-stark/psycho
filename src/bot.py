@@ -2,9 +2,7 @@ from tools import  *
 from objects import *
 from routines import *
 
-# ExampleBot2 is a more complex example to showcase how to put routines to use!
-
-class ExampleBot(GoslingAgent):
+class psycho_bot(GoslingAgent):
     def run(agent):
         # This is just some code to warn us if we're offsides
         ball_dist_to_owngoal = (agent.ball.location - agent.friend_goal.location).magnitude()
