@@ -84,6 +84,35 @@ Use `--wandb` to opt into Weights & Biases. Training otherwise logs iteration
 timesteps, throughput, reward, policy/value losses, entropy, KL divergence, and
 update counts to the console without requiring a WandB account.
 
+## Checkpoints and resume
+
+Training writes numeric checkpoint directories under `checkpoints/ppo/` at the
+configured interval and once more at clean exit. The development default keeps
+the five newest checkpoints. Checkpoints, model files, and training logs are
+ignored by Git.
+
+Resume the newest compatible checkpoint:
+
+```powershell
+uv run python -m training.train --profile dev --resume latest
+```
+
+Or select a numeric checkpoint explicitly:
+
+```powershell
+uv run python -m training.train --profile dev --resume checkpoints/ppo/100000
+```
+
+Every checkpoint contains RLGym-PPO's policy, value function, optimizers, and
+bookkeeping plus `PSYCHO_CHECKPOINT.json`. Psycho's manifest records the Python
+and dependency versions, environment timing/action settings, observation and
+action sizes, network architecture, training configuration, and timestep.
+Psycho rejects resume attempts whose observation, action, environment, or
+policy-layer configuration differs from the checkpoint.
+
+Press `q` during an iteration to checkpoint and quit after that iteration.
+`Ctrl+C` also triggers a best-effort checkpoint and worker cleanup.
+
 ## Environment baseline
 
 - 1v1 kickoff states from RLGym's standard v2 mutators

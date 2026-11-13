@@ -6,16 +6,53 @@ from pathlib import Path
 
 from rlgym_ppo import Learner
 
+from psycho.checkpoints import (
+    latest_checkpoint,
+    resolve_checkpoint,
+    validate_checkpoint,
+    write_manifest,
+)
 from training.config import TrainingConfig, get_profile
 from training.environment import build_ppo_environment
 
 
-def create_learner(config: TrainingConfig, resume: str | None = None) -> Learner:
+class PsychoLearner(Learner):
+    def __init__(self, *args, psycho_config: TrainingConfig, **kwargs) -> None:
+        self.psycho_config = psycho_config
+        super().__init__(*args, **kwargs)
+
+    def save(self, cumulative_timesteps) -> None:
+        super().save(cumulative_timesteps)
+        checkpoint_directory = self.psycho_config.checkpoint_directory / str(cumulative_timesteps)
+        write_manifest(checkpoint_directory, self.psycho_config, int(cumulative_timesteps))
+
+    def learn(self) -> None:
+        """Run PPO while preserving a checkpoint on interruption or failure."""
+
+        try:
+            self._learn()
+        except KeyboardInterrupt:
+            print("Training interrupted; saving the current state.")
+            self.save(self.agent.cumulative_timesteps)
+        except Exception:
+            self.save(self.agent.cumulative_timesteps)
+            raise
+        finally:
+            self.cleanup()
+
+
+def create_learner(config: TrainingConfig, resume: str | None = None) -> PsychoLearner:
     """Create an RLGym-PPO learner without starting its training loop."""
 
     environment_factory = partial(build_ppo_environment, config.environment)
-    return Learner(
+    resume_path = None
+    if resume is not None:
+        resume_path = resolve_checkpoint(resume, config.checkpoint_directory)
+        validate_checkpoint(resume_path, config)
+
+    return PsychoLearner(
         environment_factory,
+        psycho_config=config,
         n_proc=config.n_processes,
         min_inference_size=config.min_inference_size,
         timestep_limit=config.timestep_limit,
@@ -36,7 +73,7 @@ def create_learner(config: TrainingConfig, resume: str | None = None) -> Learner
         wandb_project_name="psycho",
         checkpoints_save_folder=str(config.checkpoint_directory),
         add_unix_timestamp=False,
-        checkpoint_load_folder=resume,
+        checkpoint_load_folder=None if resume_path is None else str(resume_path),
         save_every_ts=config.checkpoint_interval,
         random_seed=config.random_seed,
         n_checkpoints_to_keep=config.checkpoints_to_keep,
@@ -50,6 +87,10 @@ def run_training(config: TrainingConfig, resume: str | None = None) -> int:
     updates = int(learner.ppo_learner.cumulative_model_updates)
     if updates < 1:
         raise RuntimeError("training exited without completing a PPO update")
+    cumulative_timesteps = int(learner.agent.cumulative_timesteps)
+    latest = latest_checkpoint(config.checkpoint_directory)
+    if latest is None or latest.name != str(cumulative_timesteps):
+        learner.save(cumulative_timesteps)
     print(f"Training finished after {updates} PPO model update(s).")
     return updates
 
@@ -63,6 +104,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Checkpoint directory, 'latest', or 'none' to start from scratch.",
     )
     parser.add_argument("--checkpoint-dir", type=Path)
+    parser.add_argument("--checkpoint-interval", type=int)
     parser.add_argument("--timesteps", type=int)
     parser.add_argument("--processes", type=int)
     parser.add_argument("--min-inference-size", type=int)
@@ -77,6 +119,8 @@ def config_from_args(args: argparse.Namespace) -> TrainingConfig:
     updates = {}
     if args.checkpoint_dir is not None:
         updates["checkpoint_directory"] = args.checkpoint_dir
+    if args.checkpoint_interval is not None:
+        updates["checkpoint_interval"] = args.checkpoint_interval
     if args.timesteps is not None:
         updates["timestep_limit"] = args.timesteps
     if args.processes is not None:

@@ -24,6 +24,7 @@ def test_command_line_overrides_do_not_require_source_edits() -> None:
         profile="dev",
         resume="none",
         checkpoint_dir=None,
+        checkpoint_interval=None,
         timesteps=512,
         processes=3,
         min_inference_size=None,
