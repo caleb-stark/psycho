@@ -10,10 +10,10 @@ training observations by hand.
 
 ## Status
 
-The repository currently contains the clean Python project foundation, pinned
-ecosystem dependencies, and a tested 1v1 RLGym v2 environment backed by
-RocketSim. PPO training, evaluation, checkpoints, and live-bot workflows are
-documented only when verified.
+The repository currently contains the clean Python project foundation, a
+tested 1v1 RLGym v2 environment backed by RocketSim, and working RLGym-PPO
+training profiles. Evaluation, checkpoint resume/export, and live-bot
+workflows are documented only when verified.
 
 ## Requirements
 
@@ -48,6 +48,41 @@ python -m pytest
 The environment tests construct, reset, and step RocketSim, exercise two
 simultaneous environments, validate finite observations and rewards, and check
 the RLGym-PPO adapter.
+
+## Training
+
+Run the one-update smoke profile before a longer session:
+
+```powershell
+uv run python -m training.train --profile smoke
+```
+
+The smoke profile uses one worker, collects 256 timesteps, and performs one PPO
+update on CPU. It checks the multiprocessing, experience collection, policy
+optimization, and cleanup path; it is not intended to learn useful gameplay.
+
+Start the development profile:
+
+```powershell
+uv run python -m training.train --profile dev
+```
+
+Start the larger production baseline:
+
+```powershell
+uv run python -m training.train --profile production
+```
+
+The production settings are a starting point, not measured optimums. Override
+common machine-dependent settings without editing source:
+
+```powershell
+uv run python -m training.train --profile dev --processes 4 --device cpu --timesteps 20000
+```
+
+Use `--wandb` to opt into Weights & Biases. Training otherwise logs iteration
+timesteps, throughput, reward, policy/value losses, entropy, KL divergence, and
+update counts to the console without requiring a WandB account.
 
 ## Environment baseline
 
