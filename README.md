@@ -10,9 +10,9 @@ training observations by hand.
 
 ## Status
 
-The repository currently contains the clean Python project foundation and
-pinned ecosystem dependencies. RocketSim environment, training, evaluation,
-checkpoint, and live-bot workflows are added in subsequent milestones and are
+The repository currently contains the clean Python project foundation, pinned
+ecosystem dependencies, and a tested 1v1 RLGym v2 environment backed by
+RocketSim. PPO training, evaluation, checkpoints, and live-bot workflows are
 documented only when verified.
 
 ## Requirements
@@ -44,6 +44,25 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 python -m pytest
 ```
+
+The environment tests construct, reset, and step RocketSim, exercise two
+simultaneous environments, validate finite observations and rewards, and check
+the RLGym-PPO adapter.
+
+## Environment baseline
+
+- 1v1 kickoff states from RLGym's standard v2 mutators
+- normalized `DefaultObs` with one slot per team (92 floats)
+- the standard 90-action `LookupTableAction` wrapped in `RepeatAction`
+- configurable action repeat, defaulting to 8 simulation ticks
+- goal termination plus no-touch and overall timeout truncation
+- a small composed reward: goals, touches, velocity to ball, and ball velocity
+  to the opponent goal
+
+`RocketSimEngine(rlbot_delay=True)` is deliberate. The matching live RLBot
+configuration uses `rlgym-rlbot`'s default offset of one tick before action end
+(`offset=-1`, relative to `ACTION_END`). Changing either side requires changing
+and testing both sides together.
 
 ## Repository layout
 
