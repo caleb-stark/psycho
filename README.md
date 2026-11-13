@@ -113,6 +113,26 @@ policy-layer configuration differs from the checkpoint.
 Press `q` during an iteration to checkpoint and quit after that iteration.
 `Ctrl+C` also triggers a best-effort checkpoint and worker cleanup.
 
+## Evaluation
+
+Evaluate the newest checkpoint without updating any weights:
+
+```powershell
+uv run python -m training.evaluate --checkpoint latest --episodes 20
+```
+
+Select a checkpoint directly when comparing runs:
+
+```powershell
+uv run python -m training.evaluate --checkpoint checkpoints/ppo/100000 --episodes 20
+```
+
+Evaluation reconstructs the checkpoint's observation, action, reward, timeout,
+and RocketSim timing settings from its manifest. The policy controls both sides
+in deterministic self-play by default and reports goals, goals conceded,
+touches, wins/losses/draws, mean reward per decision, and mean episode duration.
+Use `--stochastic` only when sampling behavior is desired.
+
 ## Environment baseline
 
 - 1v1 kickoff states from RLGym's standard v2 mutators

@@ -35,7 +35,8 @@ class DiscretePolicy(nn.Module):
 
     @torch.inference_mode()
     def act(self, observation: np.ndarray, deterministic: bool = True) -> int:
-        tensor = torch.as_tensor(observation, dtype=torch.float32)
+        device = next(self.parameters()).device
+        tensor = torch.as_tensor(observation, dtype=torch.float32, device=device)
         probabilities = self(tensor).reshape(-1, self.action_count)
         if deterministic:
             return int(probabilities.argmax(dim=-1).item())

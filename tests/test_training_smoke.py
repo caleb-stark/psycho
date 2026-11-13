@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 
@@ -43,6 +44,30 @@ def test_ppo_collects_experience_and_updates(tmp_path) -> None:
     second_policy = DiscretePolicy.from_checkpoint(checkpoint)
     assert first_policy.act(observation) == first_policy.act(observation)
     assert first_policy.act(observation) == second_policy.act(observation)
+
+    evaluation = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "training.evaluate",
+            "--checkpoint",
+            str(checkpoint),
+            "--episodes",
+            "2",
+            "--device",
+            "cpu",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert evaluation.returncode == 0, evaluation.stdout + evaluation.stderr
+    metrics = json.loads(evaluation.stdout)
+    assert metrics["episodes"] == 2
+    assert metrics["wins"] + metrics["losses"] + metrics["draws"] == 2
+    assert np.isfinite(metrics["average_reward"])
+    assert metrics["average_episode_seconds"] > 0
 
     resumed = subprocess.run(
         [
