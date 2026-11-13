@@ -31,6 +31,7 @@ wandb/
 .env.*
 !.env.example
 config.local.*
+bot/selected_checkpoint.json
 
 # Editors and operating systems
 .idea/

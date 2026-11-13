@@ -133,6 +133,39 @@ in deterministic self-play by default and reports goals, goals conceded,
 touches, wins/losses/draws, mean reward per decision, and mean episode duration.
 Use `--stochastic` only when sampling behavior is desired.
 
+## RLBot v5 live play
+
+Psycho's [RLBot v5](https://wiki.rlbot.org/v5/) entry is `bot/bot.toml`. Select
+which trained model it should load without editing source:
+
+```powershell
+uv run python -m bot.select_model checkpoints/ppo/100000
+```
+
+Use `latest` to select the newest checkpoint:
+
+```powershell
+uv run python -m bot.select_model latest
+```
+
+Then add `bot/bot.toml` in the current RLBot v5 GUI and start a 1v1 match. The
+GUI launches `python -m bot.bot` from the repository root. The runtime is a
+thin `rlgym-rlbot` `RLGymBot`: it loads the inference-only PyTorch policy and
+imports the same observation builder, action parser, reward, conditions, and
+state mutator factories as training. It does not reconstruct observations from
+RLBot packets itself.
+
+For timing accuracy, cap Rocket League at 120 or 240 FPS. Do not use 360 FPS;
+`rlgym-rlbot` specifically warns that 360 performs poorly. Uncapped can work
+with a narrower, less consistent timing window. Psycho uses the documented
+pairing for `RocketSimEngine(rlbot_delay=True)`: `step_offset=-1` relative to
+the end of the prior action, with the checkpoint's action repeat (8 by
+default).
+
+The bridge, configuration, model loading, and action production are covered by
+automated tests. Rocket League itself has not been launched in this rebuild,
+so live gameplay is not yet claimed as verified.
+
 ## Environment baseline
 
 - 1v1 kickoff states from RLGym's standard v2 mutators

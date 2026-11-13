@@ -1,0 +1,17 @@
+#:schema https://rlbot.org/schemas/agent.json
+
+[settings]
+agent_id = "caleb-stark/psycho"
+name = "Psycho"
+loadout_file = "loadout.toml"
+root_dir = ".."
+run_command = '.\.venv\Scripts\python.exe -m bot.bot'
+run_command_linux = './.venv/bin/python -m bot.bot'
+
+[details]
+description = "A machine-learning bot trained in RLGym v2 with RocketSim and PPO."
+fun_fact = "Psycho began as a rule-based personal project before its ML rebuild."
+source_link = "https://github.com/caleb-stark/psycho"
+developer = "caleb stark"
+language = "rlgym"
+tags = ["1v1"]

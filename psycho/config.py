@@ -35,3 +35,9 @@ class EnvironmentConfig:
 
 
 DEFAULT_ENVIRONMENT = EnvironmentConfig()
+
+
+def environment_config_from_dict(values: dict) -> EnvironmentConfig:
+    data = dict(values)
+    data["reward_weights"] = RewardWeights(**data["reward_weights"])
+    return EnvironmentConfig(**data)

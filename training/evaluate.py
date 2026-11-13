@@ -10,7 +10,7 @@ import torch
 from rlgym.rocket_league.common_values import BLUE_TEAM, TICKS_PER_SECOND
 
 from psycho.checkpoints import load_manifest, resolve_checkpoint
-from psycho.config import EnvironmentConfig, RewardWeights
+from psycho.config import environment_config_from_dict
 from psycho.models import DiscretePolicy
 from training.environment import build_rlgym_environment
 
@@ -27,12 +27,6 @@ class EvaluationSummary:
     touches: int
     average_reward: float
     average_episode_seconds: float
-
-
-def environment_config_from_manifest(manifest: dict) -> EnvironmentConfig:
-    values = dict(manifest["environment"])
-    values["reward_weights"] = RewardWeights(**values["reward_weights"])
-    return EnvironmentConfig(**values)
 
 
 def select_device(requested: str) -> str:
@@ -59,7 +53,7 @@ def evaluate_checkpoint(
     torch.manual_seed(seed)
 
     manifest = load_manifest(checkpoint)
-    environment_config = environment_config_from_manifest(manifest)
+    environment_config = environment_config_from_dict(manifest["environment"])
     policy = DiscretePolicy.from_checkpoint(checkpoint, device=select_device(device))
     environment = build_rlgym_environment(environment_config)
 
